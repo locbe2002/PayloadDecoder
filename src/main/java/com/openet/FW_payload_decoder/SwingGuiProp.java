@@ -579,6 +579,7 @@ public class SwingGuiProp implements ActionListener, PropertyChangeListener {
  * 
  */
     public static void main(String[] args) {
+	System.out.writeln("this is a test");
     	JTabbedPane DecodeTabPane = new JTabbedPane();
     	SS_Sub_Tool_Frame = new JFrame("Subscriber and Session Store Properties");
     	SS_Sub_Tool_Frame.setSize(800, 400);
