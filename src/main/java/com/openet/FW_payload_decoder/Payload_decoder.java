@@ -350,6 +350,7 @@ public class Payload_decoder implements ObjectRepository {
 	FileOutputStream FAvs = null;
 	FileOutputStream Fout = null;
     try {
+	    	System.out.println("Welcome to github building");
 		Parse_Cmd(args);
 		Init();
 		Payload_decoder h = new Payload_decoder(H2Conn);
