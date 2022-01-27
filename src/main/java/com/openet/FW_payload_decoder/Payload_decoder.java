@@ -1,5 +1,6 @@
 package com.openet.FW_payload_decoder;
 import org.apache.commons.io.FileUtils;
+import org.json.*;
 import java.util.*;
 import java.lang.*;
 import java.time.Duration;
@@ -32,27 +33,43 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVFormat;
 import com.openet.FW_payload_decoder.Password.*;
+
 /*
  *
 */
 public class Payload_decoder implements ObjectRepository {
-
+	private static class SubAvs{
+		static String SubAvsName;
+		static char Del;
+		static List<String> SubAvsField = new ArrayList<String>();
+	}
+	private static class MainAvs{
+		static String FileName;
+		static String AvsName;
+		static char Del;
+		static List<String> AvsField = new ArrayList<String>();
+		static SubAvs MSubAvs = new SubAvs();
+	}
+	private static MainAvs MainAvses = new MainAvs();
   private static Properties props = null;
   private static Properties Allprops = null;
   private static Connection conn = null;
-  private static Connection H2Conn = null;
-  private static String H2_Uid = null;
-  private static String H2_Pass_Encrypted = null;
-  private static String H2_Pass = null;
-  private static String FW_Avs = null;
-  private static String Working_Dir = null;
-  private static String FW_Version = null;
-  private static String dataFile;
-  private static String Prg_dir;
+	private static String H2_Uid = null;
+	private static String H2_Pass_Encrypted = null;
+	private static String H2_Pass = null;
+	private static String FW_Avs = null;
+	private static String Json_Conf;
+	private static String Working_Dir = null;
+	private static String FW_Version = null;
+	private static String dataFile;
+	private static String Root_dir;
+	private static String Prg_dir;
+	private static int Dump_Avs_Cdr = 100;
+  private static boolean DumpAvs = false;
 
   private static String propertiesFile = null;
   private static String H2Url = null;
-  final static Logger logger = Logger.getLogger(Payload_decoder.class);
+	final static Logger logger = Logger.getLogger(Payload_decoder.class);
 
   private PreparedStatement selectOperRecs = null;
   private HashMap<String, String> map = new HashMap<>();
@@ -60,69 +77,123 @@ public class Payload_decoder implements ObjectRepository {
 /*
  *
 */
-  Payload_decoder(Connection PmConn) throws Exception {
-	  conn = PmConn;
+  Payload_decoder() throws Exception {
+    try {
+      Class.forName("org.h2.Driver");
+    } catch (Exception e) {
+				logger.error("Error locating h2 Driver:!", e);
+      return ;
+    } 
+    props = loadProperties(propertiesFile);
+    if (props == null){
+			return;
+		}
+    try {
+			Prg_dir = getProperty("PRG_DIR", null, props);
+			Dump_Avs_Cdr = Integer.parseInt(getProperty("NUM_AVS_CDR", "100", props));
+      Working_Dir = getProperty("WORKING_DIR", null, props);
+      Allprops = loadProperties(Prg_dir + "/MSDB/AllServer.properties");
+      H2_Uid = getProperty("com.openet.util.JDBCConnection.username", null, Allprops);
+      H2_Pass_Encrypted = getProperty("com.openet.util.JDBCConnection.password", null, Allprops);
+			Password p = new Password(FW_Version, "decode", H2_Pass_Encrypted);
+			H2_Pass = p.Get_PlainText();
+      Json_Conf = getProperty("JSON_CONFIG", null, props).replaceAll("\\$PRG_DIR", Prg_dir);
+			DumpAvs = Boolean.parseBoolean(getProperty("DUMPAVS", "0", props));
+      logger.info("Connecting to DB using username: " + H2_Uid + ", passwd: " + H2_Pass + ", URL: " + H2Url);
+      conn = DriverManager.getConnection(H2Url, H2_Uid, H2_Pass);
+    } catch (Exception e) {
+			logger.error("Error locating h2 Driver:!", e);
+    }
   }
 /*
  *
 */
-  public static String getProperty(String key, String Default, Properties pm_prop) {
-	String Ret = null;
-    Ret = pm_prop.getProperty(key);
-	if (Ret.equals(null)){
-		Ret = Default;
+	public static void DumpJsonConfig() throws Exception {
+		JSONObject JsonObj = new JSONObject();
+		JSONArray JsonAr = new JSONArray();
+		JSONObject JsonObjSub = new JSONObject();
+		JSONArray JsonArSubField = new JSONArray();
+		JsonObj.put("delimiter", MainAvses.Del);
+		JsonObj.put("file_name", MainAvses.FileName);
+		for (String Field : MainAvses.AvsField){
+			JsonAr.put(Field);
+		}
+		JsonObj.put("fields", JsonAr);
+		JsonObjSub.put("name", MainAvses.MSubAvs.SubAvsName);
+		JsonObjSub.put("delimiter", MainAvses.MSubAvs.Del);
+		for (String Field : MainAvses.MSubAvs.SubAvsField){
+			JsonArSubField.put(Field);
+		}
+		JsonObjSub.put("fields", JsonArSubField);
+		JsonObj.put("subavs", JsonObjSub);
+		JsonObj.put(MainAvses.AvsName, JsonObjSub); 
+    try{
+			logger.info(JsonObj.toString(4));
+    }catch(JSONException e) {
+    }       
 	}
+/*
+ *
+*/
+	public static void ReadJsonConfig() throws Exception {
+    File file = new File(Json_Conf);
+    String content = FileUtils.readFileToString(file, "utf-8");
+    JSONObject tomJsonObject = new JSONObject(content);    
+
+		Iterator<String> keys = tomJsonObject.keys();
+		while(keys.hasNext()) {
+    	String key = keys.next();
+    	if (tomJsonObject.get(key) instanceof JSONObject) {
+				if (FW_Avs.equals(key)){
+					JSONObject AvsObject = tomJsonObject.getJSONObject(key);
+					MainAvses.AvsName = key;
+					MainAvses.Del = AvsObject.getString("delimiter").charAt(0);
+					MainAvses.FileName = AvsObject.getString("file_name");
+					JSONArray AvsFields = AvsObject.getJSONArray("fields");
+					List<Object> AvsField = AvsFields.toList();
+					for (Object Field : AvsField) {
+    				MainAvses.AvsField.add((String)Field);
+					}
+					if (AvsObject.has("subavs")) {
+						JSONObject SubAvsObject = AvsObject.getJSONObject("subavs");
+						MainAvses.MSubAvs.SubAvsName = SubAvsObject.getString("name");
+						MainAvses.Del = SubAvsObject.getString("delimiter").charAt(0);
+						JSONArray SubAvsFields = SubAvsObject.getJSONArray("fields");
+						List<Object> Fields = SubAvsFields.toList();
+						for (Object Field : Fields) {
+    					MainAvses.MSubAvs.SubAvsField.add((String)Field);
+						}
+					}
+      	}
+			}
+    }
+  }
+/*
+ *
+*/
+  public String getProperty(String key, String Default, Properties pm_prop) {
+		String Ret = null;
+    Ret = pm_prop.getProperty(key);
+		if (Ret.equals(null)){
+			Ret = Default;
+		}
     return Ret;
   }
 /*
  *
 */
-  private static void Init() throws Exception {
-	try {
-	  props = loadProperties(propertiesFile);
-	  Prg_dir = getProperty("PRG_DIR", null, props);
-	  Working_Dir = getProperty("WORKING_DIR", null, props);
-	  Allprops = loadProperties(Working_Dir + "/MSDB/AllServer.properties");
-	  H2_Uid = getProperty("com.openet.util.JDBCConnection.username", null, Allprops);
-	  H2_Pass_Encrypted = getProperty("com.openet.util.JDBCConnection.password", null, Allprops);
-	  Password p = new Password(FW_Version, "decode", H2_Pass_Encrypted);
-	  H2_Pass = p.Get_PlainText();
-	  logger.info("Connecting to DB using username: " + H2_Uid + ", passwd: " + H2_Pass + ", URL: " + H2Url);
-	  H2ConOpen(H2Url, H2_Uid, H2_Pass);
-	} catch (Exception e) {
-	  logger.error("Error locating h2 Driver:!", e);
-	}   
-  }
-/*
- *
-*/
-  private static void H2ConOpen(String PmH2Url, String PmH2Uid, String PmH2Pass) throws Exception {        
+  private void close() {
     try {
-      Class.forName("org.h2.Driver");
-      H2ConClose();
-      H2Conn = DriverManager.getConnection(PmH2Url, PmH2Uid, PmH2Pass);
-    } catch (Exception e) {
-      logger.error("Connecting to database:!", e);
-      throw new Exception (e);
-    }
-  }
-/*
- * 
-*/
-  private static void H2ConClose() throws Exception{
-    try {
-      if (H2Conn != null) {
-        H2Conn.close();
+      if (conn != null) {
+        conn.close();
       }
     } catch (Exception e) {
-      logger.error("Error closing H2 database connection");
-      throw new Exception (e);
-    }
+  	}
   }
 /*
  *
 */
-  private static Properties loadProperties(String Pro_File) {
+  private Properties loadProperties(String Pro_File) {
     Properties Ret_Prop = new Properties();
     try {
       Ret_Prop.load(new FileInputStream(Pro_File));
@@ -222,9 +293,8 @@ public class Payload_decoder implements ObjectRepository {
 /*
  *
 */
-  public void loadPreparedStatements() {
+  private void loadPreparedStatements() {
     String SELECTFROMAVS = "SELECT * FROM CONFIGTYPES WHERE NAME='" + FW_Avs + "'";
-    logger.error("SELECTFROMAVS = " + SELECTFROMAVS);
     try {
       selectOperRecs = conn.prepareStatement(SELECTFROMAVS);
       ResultSet rs = selectOperRecs.executeQuery();
@@ -278,6 +348,49 @@ public class Payload_decoder implements ObjectRepository {
   public ConfigTypeDetails[] getDescendantTypeDetails(String name) {
     return null;
   }
+/*
+ *
+*/
+	public String Avs2CSV(AVS Avses){
+
+		String StrRet = "";
+    String Fvalue = null;
+		boolean First_Time = true;
+		for(String Field:MainAvses.AvsField){ 
+			try{
+				Fvalue = Avses.getFieldValue(Field).toString();
+			}catch(Exception e){
+				Fvalue = "NULL";
+			}
+			if (First_Time){
+				StrRet = StrRet + Fvalue;
+				First_Time = false;
+			}else{
+				StrRet = StrRet + MainAvses.Del + Fvalue;
+			}
+		}
+		if (!MainAvses.MSubAvs.SubAvsField.isEmpty()){
+			try{
+				AVSValue[] SubAvses = (AVSValue[]) Avses.getFieldValue(MainAvses.MSubAvs.SubAvsName).getValue();
+				for (String Field:MainAvses.MSubAvs.SubAvsField){
+					for (int i = 0; i < SubAvses.length; i++){
+						AVS tempavs = (AVS) SubAvses[i].getValue();
+						try{
+							Fvalue = tempavs.getFieldValue(Field).toString();
+						}catch (Exception e){
+						}
+						if (Fvalue != null){
+							StrRet = StrRet + MainAvses.Del + Fvalue;
+						}else{
+							StrRet = StrRet + MainAvses.MSubAvs.Del;
+						}
+					}
+				}
+			}catch(Exception e){
+			}
+		}
+		return StrRet;
+	}
 /*
  *
 */
@@ -347,51 +460,79 @@ public class Payload_decoder implements ObjectRepository {
  *
 */
   public static void  main(String[] args) {
-	FileOutputStream FAvs = null;
-	FileOutputStream Fout = null;
+		FileOutputStream FAvs = null;
+		FileOutputStream Fout = null;
     try {
-	    	System.out.println("Welcome to github building");
-		Parse_Cmd(args);
-		Init();
-		Payload_decoder h = new Payload_decoder(H2Conn);
-		h.loadPreparedStatements();
-		AVSTypeRepository.getInstance().initialize(h, false);
-		zipTool.getInstance().initialize();
-		AVSCodec avsCodec = new AVSCodec();
-		CSVParser parser = new CSVParser(new FileReader(dataFile), CSVFormat.RFC4180);
-      	FAvs = new FileOutputStream(Working_Dir + "/output/" + FW_Avs + ".avs");
-		Instant TimeStart = Instant.now();
-		for (CSVRecord record : parser) {
-			String str = record.get(record.size() - 1);
-			char F_char = str.charAt(0);
-			if (str != null && !str.isEmpty()) {
-				str = str + "\n";
-				byte[] outByte = str.getBytes();
-				byte[] versionedByteArray = null;
-				if (F_char == '7') {
-					versionedByteArray = zipTool.getInstance().decompress(zipTool.getInstance().asHex(outByte));
-				} else {
-					versionedByteArray = zipTool.getInstance().appendBeginByte(zipTool.getInstance().asHex(outByte));
-				}
-				ByteBuffer byteBuffer = ByteBuffer.allocateDirect(versionedByteArray.length);
-				byteBuffer.put(versionedByteArray);
-				byteBuffer.position(0);
-				try {
-					AVS Avses = avsCodec.decodeAVS(byteBuffer);
-					if (Avses != null) {
-						FAvs.write(Avses.toString().getBytes());
-						FAvs.write("=========\n".getBytes());
-					}
-				} catch (ASN1Exception e) {
-					e.printStackTrace();
-				}
+			Parse_Cmd(args);
+      Payload_decoder h = new Payload_decoder();
+      h.loadPreparedStatements();
+			if (!Json_Conf.equals("none")){
+				h.ReadJsonConfig();
+				h.DumpJsonConfig();
+      	Fout = new FileOutputStream(Working_Dir + "/output/" + MainAvses.FileName);
 			}
-		}
-		Instant TimeEnd = Instant.now();
-		Duration timeElapsed = Duration.between(TimeStart, TimeEnd);
-		logger.info("INFO: Time taken: " + timeElapsed.toMillis() + " milliseconds");
+      AVSTypeRepository.getInstance().initialize(h, false);
+      zipTool.getInstance().initialize();
+      AVSCodec avsCodec = new AVSCodec();
+      CSVParser parser = new CSVParser(new FileReader(dataFile), CSVFormat.RFC4180);
+			if (DumpAvs)
+      	FAvs = new FileOutputStream(Working_Dir + "/output/" + FW_Avs + ".avs");
+			Instant TimeStart = Instant.now();
+			String CsvHeader = "";
+			for(String Field:MainAvses.AvsField){ 
+				CsvHeader = CsvHeader + Field.toUpperCase() + MainAvs.Del;
+			}
+			for(String lv_Field:MainAvs.MSubAvs.SubAvsField){
+				CsvHeader = CsvHeader + lv_Field.toUpperCase() + MainAvs.MSubAvs.Del;
+			}
+			int Total_CDR = 0;
+      for (CSVRecord record : parser) {
+        String str = record.get(record.size() - 1);
+        if (str != null && !str.isEmpty()) {
+        	char F_char = str.charAt(0);
+          str = str + "\n";
+          byte[] outByte = str.getBytes();
+          byte[] versionedByteArray = null;
+          if (F_char == '7') {
+            versionedByteArray = zipTool.getInstance().decompress(zipTool.getInstance().asHex(outByte));
+          } else {
+            versionedByteArray = zipTool.getInstance().appendBeginByte(zipTool.getInstance().asHex(outByte));
+          }
+          ByteBuffer byteBuffer = ByteBuffer.allocateDirect(versionedByteArray.length);
+          byteBuffer.put(versionedByteArray);
+          byteBuffer.position(0);
+          try {
+            AVS Avses = avsCodec.decodeAVS(byteBuffer);
+            if (Avses != null) {
+							if (DumpAvs){
+								FAvs.write(Avses.toString().getBytes());
+								FAvs.write("=========\n".getBytes());
+								System.out.println(Avses.toString());
+								System.out.println("=========\n");
+								if (Dump_Avs_Cdr > 0 && Total_CDR > Dump_Avs_Cdr)
+									DumpAvs = false;
+							}
+							if (!Json_Conf.equals("none")){
+								String AvsStr = null;
+								AvsStr = h.Avs2CSV(Avses) + "\n";
+								Fout.write(AvsStr.getBytes());
+							}
+						}
+          } catch (ASN1Exception e) {
+            e.printStackTrace();
+          }
+        }
+				Total_CDR++;
+      }
+			Instant TimeEnd = Instant.now();
+			Duration timeElapsed = Duration.between(TimeStart, TimeEnd);
+      logger.info("INFO: (" + Total_CDR + " CDR /" + timeElapsed.toMillis() + " ms )");
+			if (!Json_Conf.equals("none")){
+      	Fout.close();
+			}
+			if (DumpAvs)
       	FAvs.close();
-      	H2ConClose();
+      h.close();
     } catch (Exception e) {
       e.printStackTrace();
       logger.error("Error" + e);
