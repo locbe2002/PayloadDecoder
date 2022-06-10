@@ -348,6 +348,10 @@ public class SwingGuiProp implements ActionListener, PropertyChangeListener {
     		byteBuffer.put(versionedByteArray);
     		byteBuffer.position(0);
     		logger.info("byteBuffer: " + zipTool.getInstance().asString(versionedByteArray));
+		for(int i=0; i< versionedByteArray.length ; i++) {
+         		System.out.print(versionedByteArray[i]);
+      		}
+		System.out.println("\n");
     		logger.info("versionedByteArray: " + versionedByteArray);
 		Avses = avsCodec.decodeAVS(byteBuffer);
     	}catch(Exception e) {
