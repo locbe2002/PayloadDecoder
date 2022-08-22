@@ -349,7 +349,14 @@ public class SwingGuiProp implements ActionListener, PropertyChangeListener {
 			versionedByteArray = zipTool.getInstance().appendBeginByte(zipTool.getInstance().asHex(outByte));
 		} else {
 //    			return Snappy.uncompress(asHex(outByte));
-			return Snappy.uncompressString(outByte,"UTF-8");
+//			return Snappy.uncompressString(outByte,"UTF-8");
+			
+			byte[] arrayOfByte1 = DatatypeConverter.parseHexBinary(PmPayloadHex);
+        		System.out.println("data.length: " + PmPayloadHex.length() + ", compressed.length: " + arrayOfByte1.length);
+        		byte[] arrayOfByte2 = Snappy.uncompress(arrayOfByte1);
+			String str2 = new String(arrayOfByte2, "UTF-8");
+        		return str2;
+			
     		}
     		ByteBuffer byteBuffer = ByteBuffer.allocateDirect(versionedByteArray.length);
     		byteBuffer.put(versionedByteArray);
