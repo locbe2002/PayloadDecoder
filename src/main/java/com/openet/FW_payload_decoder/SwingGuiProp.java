@@ -335,6 +335,17 @@ public class SwingGuiProp implements ActionListener, PropertyChangeListener {
 /*
  * 
  */
+	private static String hexToASCII(String hexValue){
+      		StringBuilder output = new StringBuilder("");
+      		for (int i = 0; i < hexValue.length(); i += 2){
+         		String str = hexValue.substring(i, i + 2);
+         		output.append((char) Integer.parseInt(str, 16));
+      		}
+      		return output.toString();
+   	}
+/*
+ * 
+ */
     private String Hex2AVS(String PmPayloadHex) {
     	AVS Avses = null;
     	try {
@@ -352,7 +363,7 @@ public class SwingGuiProp implements ActionListener, PropertyChangeListener {
 //			byte[] arrayOfByte1 = DatatypeConverter.parseHexBinary(PmPayloadHex);
 //        		System.out.println("data.length: " + PmPayloadHex.length() + ", compressed.length: " + arrayOfByte1.length);
 //        		byte[] arrayOfByte2 = Snappy.uncompress(arrayOfByte1);
-			String str2 = new String (Snappy.uncompress(hexToAscii(PmPayloadHex).getBytes()), "UTF-8");
+			String str2 = new String (Snappy.uncompress(hexToASCII(PmPayloadHex)), "UTF-8");
 //			String str2 = new String(arrayOfByte2, "UTF-8");
 //			System.out.println("you are before return");
         		return str2;
