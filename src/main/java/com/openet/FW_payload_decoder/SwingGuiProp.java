@@ -363,11 +363,10 @@ public class SwingGuiProp implements ActionListener, PropertyChangeListener {
 			System.out.println("you are here 2");
 //			byte[] arrayOfByte1 = DatatypeConverter.parseHexBinary(PmPayloadHex);
 //        		System.out.println("data.length: " + PmPayloadHex.length() + ", compressed.length: " + arrayOfByte1.length);
-//        		byte[] arrayOfByte2 = Snappy.uncompress(arrayOfByte1);
-			String str2 = new String (Snappy.uncompress(hexToASCII(PmPayloadHex).getBytes()), "UTF-8");
+        		return new String (Snappy.uncompress(DatatypeConverter.parseHexBinary(PmPayloadHex)), "UTF-8";
 //			String str2 = new String(arrayOfByte2, "UTF-8");
 //			System.out.println("you are before return");
-        		return str2;
+//        		return str2;
     		}
     		ByteBuffer byteBuffer = ByteBuffer.allocateDirect(versionedByteArray.length);
     		byteBuffer.put(versionedByteArray);
