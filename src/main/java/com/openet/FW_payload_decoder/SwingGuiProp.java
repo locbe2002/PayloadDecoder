@@ -32,7 +32,10 @@ import org.voltdb.client.*;
 import components.*;
 import javax.xml.bind.DatatypeConverter;
 import org.xerial.snappy.Snappy;
-
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 
 public class SwingGuiProp implements ActionListener, PropertyChangeListener {
 	final static Logger logger = Logger.getLogger(Payload_decoder.class);
@@ -360,7 +363,10 @@ public class SwingGuiProp implements ActionListener, PropertyChangeListener {
 		}else if (F_2_char.equals("80")) {
 			versionedByteArray = zipTool.getInstance().appendBeginByte(zipTool.getInstance().asHex(outByte));
 		} else {
-        		return new String (Snappy.uncompress(DatatypeConverter.parseHexBinary(PmPayloadHex)), "UTF-8");
+        		String OriJson = new String (Snappy.uncompress(DatatypeConverter.parseHexBinary(PmPayloadHex)), "UTF-8");
+        		Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        		JsonElement jsonElement = JsonParser.parseString(OriJsonJson);
+        		return gson.toJson(jsonElement);			
     		}
     		ByteBuffer byteBuffer = ByteBuffer.allocateDirect(versionedByteArray.length);
     		byteBuffer.put(versionedByteArray);
