@@ -338,6 +338,7 @@ public class SwingGuiProp implements ActionListener, PropertyChangeListener {
 	private static String hexToASCII(String hexValue){
       		StringBuilder output = new StringBuilder("");
       		for (int i = 0; i < hexValue.length(); i += 2){
+			System.out.println("i = " + i + " len = " + hexValue.length());
          		String str = hexValue.substring(i, i + 2);
          		output.append((char) Integer.parseInt(str, 16));
       		}
