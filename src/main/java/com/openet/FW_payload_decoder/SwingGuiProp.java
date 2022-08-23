@@ -365,7 +365,7 @@ public class SwingGuiProp implements ActionListener, PropertyChangeListener {
 		} else {
         		String OriJson = new String (Snappy.uncompress(DatatypeConverter.parseHexBinary(PmPayloadHex)), "UTF-8");
         		Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        		JsonElement jsonElement = JsonParser.parseString(OriJsonJson);
+        		JsonElement jsonElement = JsonParser.parseString(OriJson);
         		return gson.toJson(jsonElement);			
     		}
     		ByteBuffer byteBuffer = ByteBuffer.allocateDirect(versionedByteArray.length);
