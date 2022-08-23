@@ -360,13 +360,7 @@ public class SwingGuiProp implements ActionListener, PropertyChangeListener {
 		}else if (F_2_char.equals("80")) {
 			versionedByteArray = zipTool.getInstance().appendBeginByte(zipTool.getInstance().asHex(outByte));
 		} else {
-			System.out.println("you are here 2");
-//			byte[] arrayOfByte1 = DatatypeConverter.parseHexBinary(PmPayloadHex);
-//        		System.out.println("data.length: " + PmPayloadHex.length() + ", compressed.length: " + arrayOfByte1.length);
         		return new String (Snappy.uncompress(DatatypeConverter.parseHexBinary(PmPayloadHex)), "UTF-8");
-//			String str2 = new String(arrayOfByte2, "UTF-8");
-//			System.out.println("you are before return");
-//        		return str2;
     		}
     		ByteBuffer byteBuffer = ByteBuffer.allocateDirect(versionedByteArray.length);
     		byteBuffer.put(versionedByteArray);
