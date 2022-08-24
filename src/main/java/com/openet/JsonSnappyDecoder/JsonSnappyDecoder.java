@@ -14,10 +14,13 @@ public class JsonSnappyDecoder {
       line = reader.readLine();
       while (line != null) {
         byte[] arrayOfByte1 = DatatypeConverter.parseHexBinary(line);
-        System.out.println("data.length: " + line.length() + ", compressed.length: " + arrayOfByte1.length);
+//        System.out.println("data.length: " + line.length() + ", compressed.length: " + arrayOfByte1.length);
         byte[] arrayOfByte2 = Snappy.uncompress(arrayOfByte1);
-        String str2 = new String(arrayOfByte2, "UTF-8");
-        System.out.println(str2);
+        String OriJson = new String(arrayOfByte2, "UTF-8");
+        String OriJson = new String (Snappy.uncompress(DatatypeConverter.parseHexBinary(line)), "UTF-8");
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        JsonElement jsonElement = JsonParser.parseString(OriJson);
+        System.out.println(gson.toJson(jsonElement));
         line = reader.readLine();
       }
       reader.close();
