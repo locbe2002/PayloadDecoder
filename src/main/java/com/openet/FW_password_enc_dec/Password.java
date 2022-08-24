@@ -219,7 +219,7 @@ private class Obfuscator {
 	public String Get_PlainText(){
 		return PlainText;
 	}
-//  public static void main(String[] args) {
-//    Password p = new Password(args[0], args[1], args[2]);
-//	}
+  public static void main(String[] args) {
+    Password p = new Password(args[0], args[1], args[2]);
+	}
 }
