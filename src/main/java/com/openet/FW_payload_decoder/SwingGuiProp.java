@@ -548,21 +548,21 @@ public class SwingGuiProp implements ActionListener, PropertyChangeListener {
         			if (FW_FileType_Str.equals("SQLITE")) {
         				InitializeSqlite(DbFile);
         			}else {     				
-                        task = new Task(JNI_Handle);
-                        task.addPropertyChangeListener(this);
-                        task.execute();
+                        		task = new Task(JNI_Handle);
+                        		task.addPropertyChangeListener(this);
+                        		task.execute();
         				JNI_Handle.init(DbFile);
-                        lookupRunnableObject = new components.lookupRunnable(JNI_Handle, DbFile);
-                        Thread t = new Thread(lookupRunnableObject);
-                        t.start();
+                        		lookupRunnableObject = new components.lookupRunnable(JNI_Handle, DbFile);
+                        		Thread t = new Thread(lookupRunnableObject);
+                        		t.start();
         				int progress = 0;
-        	            Prgrbr.setValue(0);
-        	            Prgrbr.setIndeterminate(true);
-        	            Prgrbr.setVisible(true);
+        	            		Prgrbr.setValue(0);
+        	            		Prgrbr.setIndeterminate(true);
+        	            		Prgrbr.setVisible(true);
         			}
         		}
         	}catch (Exception ex){
-        		
+        		System.out.println("you are here" + ex);
         	}
         }else if (Action.equals("Search")){
         	int LcCdr = 0;
