@@ -353,7 +353,7 @@ public class SwingGuiProp implements ActionListener, PropertyChangeListener {
     private String Hex2AVS(String PmPayloadHex) {
     	AVS Avses = null;
     	try {
-//    		PmPayloadHex = PmPayloadHex + "\n";
+    		PmPayloadHex = PmPayloadHex + "\n";
     		byte[] outByte = PmPayloadHex.getBytes();
     		byte[] versionedByteArray = null;
 		String F_2_char = PmPayloadHex.substring(0,2);
