@@ -358,7 +358,7 @@ public class SwingGuiProp implements ActionListener, PropertyChangeListener {
     		byte[] versionedByteArray = null;
 		String F_2_char = PmPayloadHex.substring(0,2);
 		System.out.println("you are here" + PmPayloadHex);
-    		if (F_2_char.equals("70")) {
+    		if (F_2_char.equals("70") || F_2_char.equals("78")) {
     			versionedByteArray = zipTool.getInstance().decompress(zipTool.getInstance().asHex(outByte));
 		}else if (F_2_char.equals("80")) {
 			versionedByteArray = zipTool.getInstance().appendBeginByte(zipTool.getInstance().asHex(outByte));
