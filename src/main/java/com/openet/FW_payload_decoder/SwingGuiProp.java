@@ -464,6 +464,7 @@ public class SwingGuiProp implements ActionListener, PropertyChangeListener {
     		logger.info("url = " + Url);
     		H2ConOpen(Url, H2Db_Uid_Txt.getText(), Pass);
     		Payload_decoder h = new Payload_decoder(H2Conn);
+		h.Set_Avs("SPM_CustomOffer");
     		h.loadPreparedStatements();
     		AVSTypeRepository.getInstance().initialize(h, false);
     		zipTool.getInstance().initialize();
