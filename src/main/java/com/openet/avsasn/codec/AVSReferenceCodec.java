@@ -200,7 +200,7 @@ final public class AVSReferenceCodec extends AVSFieldCodec {
         		}
         		byte[] checksum = berDecodeBuffer.decodeOctetArray();
         		if(avsType.getChecksum() == null || !Arrays.equals(checksum, avsType.getChecksum())) {
-        			throw new ASN1Exception("Invalid AVS type [checksum mismatch error]: " + avsTypeName);
+        			throw new ASN1Exception("Invalid AVS type [checksum mismatch error]: " + avsTypeName + "checksum = " + checksum + " avsc = " + avsType.getChecksum());
         		}
         		tag = berDecodeBuffer.decodeTag();
         	} else {
