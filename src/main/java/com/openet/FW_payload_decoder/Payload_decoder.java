@@ -143,6 +143,13 @@ public class Payload_decoder implements ObjectRepository {
 			}
     }
   }
+
+/*
+ *
+*/
+  public void Set_Avs(String Avs_Str){
+	  FW_Avs = Avs_Str;
+  }
 /*
  *
 */
