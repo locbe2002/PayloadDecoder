@@ -53,7 +53,7 @@ public class AVSTypeRepository {
             return null;
 
         AVSType result;
-
+System.out.println("you are in find0 Name = " + name);
         if ((result = avsTypesCache.get(name)) != null)
             return result;
 
