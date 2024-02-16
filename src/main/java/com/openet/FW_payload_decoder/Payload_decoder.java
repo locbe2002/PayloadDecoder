@@ -50,6 +50,7 @@ public class Payload_decoder implements ObjectRepository {
 		static List<String> AvsField = new ArrayList<String>();
 		static SubAvs MSubAvs = new SubAvs();
 	}
+
 	private static MainAvs MainAvses = new MainAvs();
   private static Properties props = null;
   private static Properties Allprops = null;
